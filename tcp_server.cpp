@@ -4,6 +4,7 @@
 TCPServer::TCPServer(short port)
     : QTcpServer(nullptr), port_(port)
 {
+
 }
 
 bool TCPServer::start()

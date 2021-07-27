@@ -6,9 +6,21 @@
 
 #define SERVER_PORT (8585)
 
+void data_received(QByteArray& data)
+{
+    std::cout << "receive " << data.size() << " bytes" << std::endl;
+}
+
+void disconnect()
+{
+    std::cout << "disconnect" << std::endl;
+}
+
 void new_connection(TCPClient* client)
 {
     qDebug() << client->get_ip() << " " << client->get_port();
+    QObject::connect(client, &TCPClient::data_received, data_received);
+    QObject::connect(client, &TCPClient::disconnect, disconnect);
 }
 
 

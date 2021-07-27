@@ -4,7 +4,14 @@
 TCPClient::TCPClient(qintptr ID, QObject *parent) :
     QThread(parent)
 {
+    is_socket_connected_from_server_ = true;
     this->socketDescriptor = ID;
+}
+
+TCPClient::TCPClient(QString ip, qint16 port, QObject *parent)
+    :QThread(parent), ip_(ip), port_(port)
+{
+    is_socket_connected_from_server_ = false;
 }
 
 
@@ -20,55 +27,43 @@ QString TCPClient::get_ip()
 
 void TCPClient::run()
 {
-    // thread starts here
-    qDebug() << " Thread started";
-
     socket_ = new QTcpSocket();
-
-    // Set the ID
-    if(!socket_->setSocketDescriptor(this->socketDescriptor))
-    {
-        // Something's wrong, we just emit a signal
-        emit error(socket_->error());
-        return;
+    if (is_socket_connected_from_server_)  {
+        if(!socket_->setSocketDescriptor(this->socketDescriptor)) {
+            emit error(socket_->error());
+            return;
+        }
+    } else {
+        socket_->connectToHost(ip_, port_);
+        if(!socket_->waitForConnected(5000)) {
+            emit error(socket_->error());
+            return;
+        }
     }
 
     ip_ = socket_->localAddress().toIPv4Address();
     port_ = socket_->localPort();
-
-    // connect socket and signal
-    // note - Qt::DirectConnection is used because it's multithreaded
-    //        This makes the slot to be invoked immediately, when the signal is emitted.
-
-//    connect(socket_, SIGNAL(readyRead()), this, SLOT(readyRead()), Qt::DirectConnection);
-//    connect(socket_, SIGNAL(disconnected()), this, SLOT(disconnected()));
-
-    // We'll have multiple clients, we want to know which is which
-//    qDebug() << socketDescriptor << " Client connected";
-
-    // make this thread a loop,
-    // thread will stay alive so that signal/slot to function properly
-    // not dropped out in the middle when thread dies
+    connect(socket_, &QTcpSocket::readyRead, this, &TCPClient::ready_read, Qt::DirectConnection);
+    connect(socket_, &QTcpSocket::disconnected, this, &TCPClient::disconnected);
 
     exec();
 }
 
-//void TCPClient::readyRead()
-//{
-//    // get the information
-////    QByteArray Data = socket_->readAll();
+int TCPClient::send(const QByteArray& data)
+{
+    return socket_->write(data);
+    // socket_->flush();
+    // socket_->waitForBytesWritten(3000);
+}
 
-////    // will write on server side window
-////    qDebug() << socketDescriptor << " Data in: " << Data;
+void TCPClient::ready_read()
+{
+    QByteArray Data = socket_->readAll();
+    emit data_received(Data);
+}
 
-////    socket_->write(Data);
-//}
-
-//void TCPClient::disconnected()
-//{
-//    qDebug() << socketDescriptor << " Disconnected";
-
-
-//    socket_->deleteLater();
-//    exit(0);
-//}
+void TCPClient::disconnected()
+{
+    emit disconnect();
+    socket_->deleteLater();
+}
