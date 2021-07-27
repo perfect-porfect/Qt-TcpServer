@@ -4,6 +4,7 @@
 #define MYSERVER_H
 
 #include <QTcpServer>
+#include "tcp_client.h"
 
 class TCPServer : public QTcpServer
 {
@@ -17,9 +18,8 @@ public:
 private:
     short port_;
 
-
 signals:
-    void new_connection();
+    void new_connection(TCPClient *client);
 
 protected:
     void incomingConnection(qintptr socketDescriptor);

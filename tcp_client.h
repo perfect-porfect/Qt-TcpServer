@@ -10,18 +10,17 @@ class TCPClient : public QThread
     Q_OBJECT
 public:
     explicit TCPClient(qintptr ID, QObject *parent = 0);
-
+    qint16 get_port() const;
+    QString get_ip();
     void run();
 
 signals:
     void error(QTcpSocket::SocketError socketerror);
 
-public slots:
-    void readyRead();
-    void disconnected();
-
 private:
-    QTcpSocket *socket;
+    qint16 port_;
+    QString ip_;
+    QTcpSocket *socket_;
     qintptr socketDescriptor;
 };
 

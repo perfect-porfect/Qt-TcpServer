@@ -1,3 +1,4 @@
+*.txt.user*
 *.pro.user
 
 # Prerequisites

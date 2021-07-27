@@ -1,20 +1,34 @@
 #include <QCoreApplication>
 #include <thread>
+#include <iostream>
 
-#include "myserver.h"
+#include "tcp_server.h"
+
+#define SERVER_PORT (8585)
+
+void new_connection(TCPClient* client)
+{
+    qDebug() << client->get_ip() << " " << client->get_port();
+}
+
 
 int main(int argc, char *argv[])
 {
-//    QCoreApplication a(argc, argv);
+    QCoreApplication a(argc, argv);
 
     // Make a server and starts it
-    TCPServer server(1234);
-    server.start();
+    TCPServer server(SERVER_PORT);
+    QObject::connect(&server, &TCPServer::new_connection, new_connection);
+    bool ret = server.start();
+    if (ret)
+        std::cout << "start tcp_server with port " << SERVER_PORT << std::endl;
+    else
+        std::cout << "Cant start tcp server" << SERVER_PORT << std::endl;
 
-    while(1) {
-        std::this_thread::sleep_for(std::chrono::seconds(10));
-        break;
-    }
+//    while(1) {
+//        std::this_thread::sleep_for(std::chrono::seconds(10));
+////        break;
+//    }
 
-//    return a.exec();
+    return a.exec();
 }
